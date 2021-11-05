@@ -1,0 +1,25 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "data": {
+        "title": "modified first post",
+        "content": "modified first post through thunder bird api client"
+      }
+    },
+    {
+      "id": 2,
+      "data": {
+        "title": "This is my second post",
+        "content": "This is the second post through thunder bird api client"
+      }
+    },
+    {
+      "id": 4,
+      "data": {
+        "title": "modified fourth post",
+        "content": "modified fourth post through thunder bird api client"
+      }
+    }
+  ]
+}
