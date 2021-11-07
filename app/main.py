@@ -1,6 +1,4 @@
-from os import stat
 from typing import Optional
-from dns.resolver import query
 from fastapi import FastAPI, status, HTTPException
 from pydantic import BaseModel
 from time import sleep
@@ -55,7 +53,6 @@ def get_posts():
 
 @app.get("/post/{id}")
 def get_post(id: int):
-    # query = "SELECT * from `posts` WHERE `id` = %s"
     cursor.execute("SELECT * from `posts` WHERE `id` = %s",(id,))
     post = cursor.fetchone()
     if(post):
@@ -107,9 +104,6 @@ def delete_post(id: int):
 
 @app.put("/post/{id}")
 def update_post(id: int, post_data: post_schema):
-    # update_query = f""""""
-    # check_query = f""
-
     cursor.execute("select * from `posts` where `id` = %s",(id,))
     if(cursor.fetchone()):
         cursor.execute("update `posts` set `title` = %s, `content` = %s, `published` = %s, `timestamp` = CURRENT_TIMESTAMP where `id` = %s",(post_data.title, post_data.content, int(post_data.published), id,))
