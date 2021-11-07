@@ -1,121 +1,86 @@
-from typing import Optional
-from fastapi import FastAPI, status, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, Response, status, HTTPException, Depends
 from time import sleep
-import mysql.connector
+from . import models, schemas
+from .database import engine, get_db
+from sqlalchemy.orm import Session
+from typing import List
 
-while(True):
-    try:
-        conn = mysql.connector.connect(
-            host="localhost",
-            user="fastapi",
-            password="fastapi",
-            database="fastapi",
-        )
-        cursor = conn.cursor()
-        break
-    except Exception as e:
-        print("Unable to connect to the mysql server.")
-        print("ERROR: ",e)
-        sleep(4)
-
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-class post_schema(BaseModel):
-    title: str
-    content: str
-    published: Optional[bool] = True
-
-def format_post(post: list):
-    return {
-        "id": post[0],
-        "title":post[1],
-        "content":post[2],
-        "published" : "true" if post[3] else "false",
-        "timestamp" : str(post[4])
-    }
+# Root dir
 
 
 @app.get("/")
 def read_root():
-    return {"Message": "Welcome to my API, go to /docs for documentation."}
+    return {"Message": "/docs for documentation."}
 
-@app.get("/posts")
-def get_posts():
-    query = """SELECT * from `posts`"""
-    cursor.execute(query)
-    all_posts = cursor.fetchall()
-    raise HTTPException(
-        status_code=status.HTTP_200_OK,
-        detail=list(map(format_post,map(list,all_posts)))
-    )
+# For getting all posts
 
-@app.get("/post/{id}")
-def get_post(id: int):
-    cursor.execute("SELECT * from `posts` WHERE `id` = %s",(id,))
-    post = cursor.fetchone()
-    if(post):
-        raise HTTPException(
-            status_code=status.HTTP_200_OK,
-            detail=format_post(list(post))
-        )
+
+@app.get("/posts", response_model=List[schemas.ResponsePostSchema])
+def get_posts(db: Session = Depends(get_db), response: Response = None):
+
+    posts = db.query(models.Post).all()
+    response.status_code = status.HTTP_200_OK
+    return posts
+
+# For getting a single post
+
+
+@app.get("/post/{id}", response_model=schemas.ResponsePostSchema)
+def get_post(id: int, db: Session = Depends(get_db), response: Response = None):
+
+    post = db.query(models.Post).filter(models.Post.id == id).first()
+    if post:
+        response.status_code = status.HTTP_200_OK
+        return post
     else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="404: Post not found"
-        )
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"404": "Post not found"}
 
-@app.post("/create")
-def create_post(post_data: post_schema):
-    cursor.execute("""
-    INSERT INTO `posts` (`id`, `title`, `content`, `published`, `timestamp`) 
-    VALUES (NULL, %s, %s, %s, CURRENT_TIMESTAMP)
-    """,(post_data.title, post_data.content, int(post_data.published),))
-    conn.commit()
-    cursor.execute("SELECT * FROM `posts` WHERE `id` = last_insert_id()") 
-    result = cursor.fetchone()
-    post = {
-        "id" : result[0],
-        "title" : result[1],
-        "content" : result[2],
-        "published" : "true" if result[3] else "false",
-        "timestamp" : str(result[4])
-    }
-    raise HTTPException(
-        status_code=status.HTTP_201_CREATED,
-        detail=post
-    )
+# For creating a post
+
+
+@app.post("/create", response_model=schemas.ResponsePostSchema)
+def create_post(post_data: schemas.CreatePostSchema, db: Session = Depends(get_db), response: Response = None):
+
+    new_post = models.Post(**post_data.dict())
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    response.status_code = status.HTTP_201_CREATED
+    return new_post
+
+# For deleting a post
+
 
 @app.delete("/post/{id}")
-def delete_post(id: int):
-    cursor.execute("SELECT * from `posts` WHERE `id` = %s",(id,))
-    post = cursor.fetchone()
-    if(post):
-        cursor.execute("DELETE FROM `posts` WHERE `id` = %s",(id,))
-        conn.commit()
-        raise HTTPException(
-            status_code=status.HTTP_204_NO_CONTENT,
-        )
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="404: Post not found"
-    )
+def delete_post(id: int, db: Session = Depends(get_db), response: Response = None):
+    post_query = db.query(models.Post).filter(models.Post.id == id)
+    if(post_query.first()):
+        post_query.delete(synchronize_session=False)
+        db.commit()
+        response.status_code = status.HTTP_204_NO_CONTENT
+    else:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"404": "Post not found"}
+
+# For updating a post
+
 
 @app.put("/post/{id}")
-def update_post(id: int, post_data: post_schema):
-    cursor.execute("select * from `posts` where `id` = %s",(id,))
-    if(cursor.fetchone()):
-        cursor.execute("update `posts` set `title` = %s, `content` = %s, `published` = %s, `timestamp` = CURRENT_TIMESTAMP where `id` = %s",(post_data.title, post_data.content, int(post_data.published), id,))
-        conn.commit()
-        cursor.execute("select * from `posts` where `id` = %s",(id,))
-        raise HTTPException(
-            status_code=status.HTTP_204_NO_CONTENT,
-            detail=format_post(cursor.fetchone())
-        )
+def update_post(id: int, post_data: schemas.UpdatePostSchema,
+                db: Session = Depends(get_db),
+                response: Response = None):
+
+    post_query = db.query(models.Post).filter(models.Post.id == id)
+    if(post_query.first()):
+        post_query.update(post_data.dict(), synchronize_session=False)
+        db.commit()
+        response.status_code = status.HTTP_200_OK
+        return post_query.first()
     else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="404: Post not found"
-        )
-                
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"404": "Post not found"}
