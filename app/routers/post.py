@@ -1,10 +1,13 @@
 from fastapi import Response, status, Depends, APIRouter
 from typing import List
 from sqlalchemy.orm import Session
-from .. import models, schemas
+from .. import models, schemas, oauth2
 from ..database import get_db
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
+
+# For getting all posts
+
 
 @router.get("/", response_model=List[schemas.ResponsePostSchema])
 def get_posts(db: Session = Depends(get_db), response: Response = None):
@@ -31,7 +34,11 @@ def get_post(id: int, db: Session = Depends(get_db), response: Response = None):
 
 
 @router.post("/", response_model=schemas.ResponsePostSchema)
-def create_post(post_data: schemas.CreatePostSchema, db: Session = Depends(get_db), response: Response = None):
+def create_post(post_data: schemas.CreatePostSchema, 
+                db: Session = Depends(get_db), 
+                response: Response = None,
+                get_current_user: int = Depends(oauth2.get_current_user)
+                ):
 
     new_post = models.Posts(**post_data.dict())
     db.add(new_post)
