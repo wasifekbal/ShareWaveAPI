@@ -9,23 +9,29 @@ class PostSchema(BaseModel):
     title: str
     content: str
 
+
 class CreatePostSchema(PostSchema):
     published: Optional[bool] = True
+
 
 class UpdatePostSchema(PostSchema):
     published: bool
 
+
 class ResponsePostSchema(PostSchema):
     id: int
+    user_id: int
     published: bool
     timestamp: datetime
 
     class Config:
-        orm_mode=True
+        orm_mode = True
+
 
 class CreateUserSchema(BaseModel):
     email: EmailStr
     password: str
+
 
 class UserOut(BaseModel):
     id: int
@@ -34,15 +40,19 @@ class UserOut(BaseModel):
     last_modified: datetime
 
     class Config:
-        orm_mode=True
-    
+        orm_mode = True
+
+
 class UserLoginSchema(BaseModel):
     email: EmailStr
     password: str
+
 
 class TokenSchema(BaseModel):
     access_token: str
     token_type: str
 
+
 class TokenDataSchema(BaseModel):
     id: int
+    exp: str

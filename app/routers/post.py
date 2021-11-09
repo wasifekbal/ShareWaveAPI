@@ -1,4 +1,4 @@
-from fastapi import Response, status, Depends, APIRouter
+from fastapi import Response, status, Depends, APIRouter, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
 from .. import models, schemas, oauth2
@@ -10,7 +10,10 @@ router = APIRouter(prefix="/posts", tags=["Posts"])
 
 
 @router.get("/", response_model=List[schemas.ResponsePostSchema])
-def get_posts(db: Session = Depends(get_db), response: Response = None):
+def get_posts(db: Session = Depends(get_db),
+              response: Response = None,
+              current_user: int = Depends(oauth2.get_current_user)
+              ):
 
     posts = db.query(models.Posts).all()
     response.status_code = status.HTTP_200_OK
@@ -20,7 +23,11 @@ def get_posts(db: Session = Depends(get_db), response: Response = None):
 
 
 @router.get("/{id}", response_model=schemas.ResponsePostSchema)
-def get_post(id: int, db: Session = Depends(get_db), response: Response = None):
+def get_post(id: int,
+             db: Session = Depends(get_db),
+             response: Response = None,
+             current_user: int = Depends(oauth2.get_current_user)
+             ):
 
     post = db.query(models.Posts).filter(models.Posts.id == id).first()
     if post:
@@ -34,13 +41,14 @@ def get_post(id: int, db: Session = Depends(get_db), response: Response = None):
 
 
 @router.post("/", response_model=schemas.ResponsePostSchema)
-def create_post(post_data: schemas.CreatePostSchema, 
-                db: Session = Depends(get_db), 
+def create_post(post_data: schemas.CreatePostSchema,
+                db: Session = Depends(get_db),
                 response: Response = None,
-                get_current_user: int = Depends(oauth2.get_current_user)
+                current_user: int = Depends(oauth2.get_current_user)
                 ):
-
-    new_post = models.Posts(**post_data.dict())
+    # post_data_dict = post_data.dict()
+    # post_data_dict.update({"user_id":current_user.id})
+    new_post = models.Posts(user_id=current_user.id, **post_data.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -51,7 +59,12 @@ def create_post(post_data: schemas.CreatePostSchema,
 
 
 @router.delete("/{id}")
-def delete_post(id: int, db: Session = Depends(get_db), response: Response = None):
+def delete_post(id: int,
+                db: Session = Depends(get_db),
+                response: Response = None,
+                get_current_user: int = Depends(oauth2.get_current_user)
+                ):
+
     post_query = db.query(models.Posts).filter(models.Posts.id == id)
     if(post_query.first()):
         post_query.delete(synchronize_session=False)
@@ -64,10 +77,12 @@ def delete_post(id: int, db: Session = Depends(get_db), response: Response = Non
 # For updating a post
 
 
-@router.put("/{id}")
+@router.put("/{id}", response_model=schemas.ResponsePostSchema)
 def update_post(id: int, post_data: schemas.UpdatePostSchema,
                 db: Session = Depends(get_db),
-                response: Response = None):
+                response: Response = None,
+                current_user: int = Depends(oauth2.get_current_user)
+                ):
 
     post_query = db.query(models.Posts).filter(models.Posts.id == id)
     if(post_query.first()):
@@ -76,5 +91,7 @@ def update_post(id: int, post_data: schemas.UpdatePostSchema,
         response.status_code = status.HTTP_200_OK
         return post_query.first()
     else:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"404": "Post not found"}
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id : {current_user.id} not found"
+        )
