@@ -1,5 +1,5 @@
 venv
+.env
 test*
 *.bak
-/app/__pycache__
-/app/routers/__pycache__
+__pycache__

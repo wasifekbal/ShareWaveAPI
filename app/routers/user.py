@@ -8,7 +8,7 @@ from ..database import get_db
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.post("/", response_model=schemas.UserOut)
+@router.post("", response_model=schemas.UserOut)
 def create_user(users_data: schemas.CreateUserSchema,
                 db: Session = Depends(get_db),
                 response: Response = None,
@@ -18,7 +18,6 @@ def create_user(users_data: schemas.CreateUserSchema,
         "password": utils.get_password_hash(users_data["password"]),
         "created_at": str(datetime.now())
     })
-    print(users_data)
     new_user = models.Users(**users_data)
     db.add(new_user)
     db.commit()
@@ -27,12 +26,20 @@ def create_user(users_data: schemas.CreateUserSchema,
     return new_user
 
 
+@router.get("/me", response_model=schemas.UserOut)
+def whoami(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):
+
+    user = db.query(models.Users).filter(
+        models.Users.user_id == current_user["user_id"]).first()
+    return user
+
+
 @router.get("/{id}", response_model=schemas.UserOut)
 def get_user(id: int,
              db: Session = Depends(get_db),
              current_user: int = Depends(oauth2.get_current_user)
              ):
-    user = db.query(models.Users).filter(models.Users.id == id).first()
+    user = db.query(models.Users).filter(models.Users.user_id == id).first()
     if user:
         return user
     else:

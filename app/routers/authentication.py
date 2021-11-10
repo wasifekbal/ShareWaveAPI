@@ -23,7 +23,7 @@ def login(user_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
     token = oauth2.create_access_token(
         data={
-            "user_id": fetched_user.id
+            "user_id": fetched_user.user_id
         }
     )
 

@@ -8,13 +8,14 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# Root dir
 
 app.include_router(post.router)
 app.include_router(user.router)
 app.include_router(authentication.router)
 
+# Root dir
+
+
 @app.get("/")
 def read_root():
     return {"Message": "/docs for documentation."}
-
