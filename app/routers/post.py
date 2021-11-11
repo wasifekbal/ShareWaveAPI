@@ -1,15 +1,17 @@
 from fastapi import Response, status, Depends, APIRouter, HTTPException
 from typing import List, Optional
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from .. import models, schemas, oauth2
 from ..database import get_db
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
+
 # For getting all posts
 
 
-@router.get("", response_model=List[schemas.ResponsePostSchema])
+@router.get("",response_model=List[schemas.ResponsePostSchema])
 def get_posts(db: Session = Depends(get_db),
               search: Optional[str] = "",
               limit: int = 10,
@@ -17,21 +19,24 @@ def get_posts(db: Session = Depends(get_db),
               ):
     if not limit:
         limit = None
-    posts = db.query(models.Posts).filter(models.Posts.title.contains(search)) .order_by(
+
+    query = db.query(models.Posts, func.count(models.Vote.post_id).label("votes")).join(
+        models.Vote, models.Posts.post_id == models.Vote.post_id, isouter=True).group_by(
+        models.Posts.post_id).filter(models.Posts.title.contains(search)).order_by(
         models.Posts.post_id.desc()).limit(limit).offset(offset).all()
-    return posts
+
+    return query
+
 
 # For getting a single post
-
 
 @router.get("/{id}", response_model=schemas.ResponsePostSchema)
 def get_post(id: int,
              db: Session = Depends(get_db),
              response: Response = None,
-             current_user: int = Depends(oauth2.get_current_user)
              ):
 
-    post = db.query(models.Posts).filter(models.Posts.post_id == id).first()
+    post = db.query(models.Posts, func.count(models.Vote.post_id).label("votes")).join(models.Vote, models.Vote.post_id == models.Posts.post_id, isouter=True).group_by(models.Posts.post_id).filter(models.Posts.post_id == id).first()
     if post:
         response.status_code = status.HTTP_200_OK
         return post
@@ -84,7 +89,7 @@ def delete_post(id: int,
 # For updating a post
 
 
-@router.put("/{id}", response_model=schemas.ResponsePostSchema)
+@router.put("/{id}", response_model=schemas.CreatePostResponseSchema)
 def update_post(id: int, post_data: schemas.UpdatePostSchema,
                 db: Session = Depends(get_db),
                 response: Response = None,

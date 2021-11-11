@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic.networks import EmailStr
 
+from app import database
+
 
 class CreateUserSchema(BaseModel):
     email: EmailStr
@@ -48,23 +50,33 @@ class UpdatePostSchema(PostSchema):
     published: bool
 
 
-class ResponsePostSchema(PostSchema):
+class ResponsePostSchema(BaseModel):
 
-    class User_info(BaseModel):
-        user_id: int
-        email: EmailStr
+    class Post_info(PostSchema):
+        class User_info(BaseModel):
+            user_id: int
+            email: EmailStr
+
+            class Config:
+                orm_mode = True
+        post_id: int
+        published: bool
+        timestamp: datetime
+        user_info: User_info
 
         class Config:
             orm_mode = True
 
-    post_id: int
-    published: bool
-    timestamp: datetime
-    user_info: User_info
-
+    Posts: Post_info
+    votes: int
+    
     class Config:
         orm_mode = True
 
+
+class VoteSchema(BaseModel):
+    post_id: int
+    vote_direction: int
 
 class TokenSchema(BaseModel):
     access_token: str

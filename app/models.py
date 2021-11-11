@@ -29,3 +29,12 @@ class Users(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False)
     last_modified = Column(TIMESTAMP(
         timezone=True), nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+
+
+class Vote(Base):
+    __tablename__ = "votes"
+
+    user_id = Column(Integer, ForeignKey(name="users_votes_fk", column="users.user_id",
+                     ondelete="CASCADE"), nullable=False, primary_key=True, default=0)
+    post_id = Column(Integer, ForeignKey(name="posts_votes_fk", column="posts.post_id",
+                     ondelete="CASCADE"), nullable=False, primary_key=True, default=0)
