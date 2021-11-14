@@ -9,12 +9,14 @@ from app import database
 
 class CreateUserSchema(BaseModel):
     email: EmailStr
+    username: str
     password: str
 
 
 class UserOut(BaseModel):
     user_id: int
     email: EmailStr
+    username: str
     created_at: datetime
     last_modified: datetime
 

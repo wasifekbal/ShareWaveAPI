@@ -6,11 +6,8 @@ from . import schemas, config
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# SECRET_KEY = "82d10e4c732871b463134eeccf8e8141cc3eb8ca2a19b0f03c4c27451e3041d4d3e290"
 SECRET_KEY = config.settings.SECRET_KEY
-# ALGORITHM = "HS256"
 ALGORITHM = config.settings.HASHING_ALGO
-# ACCESS_TOKEN_EXPIRE_MINUTES = 60
 ACCESS_TOKEN_EXPIRE_MINUTES = config.settings.JWT_TOKEN_EXPIRY_MINS
 
 
