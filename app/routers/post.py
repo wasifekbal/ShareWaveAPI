@@ -31,18 +31,21 @@ def get_posts(db: Session = Depends(get_db),
 # For getting a single post
 
 @router.get("/{id}", response_model=schemas.ResponsePostSchema)
+# @router.get("/{id}")
 def get_post(id: int,
              db: Session = Depends(get_db),
              response: Response = None,
              ):
 
     post = db.query(models.Posts, func.count(models.Vote.post_id).label("votes")).join(models.Vote, models.Vote.post_id == models.Posts.post_id, isouter=True).group_by(models.Posts.post_id).filter(models.Posts.post_id == id).first()
-    if post:
+    if post == None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
+        )
+    else:
         response.status_code = status.HTTP_200_OK
         return post
-    else:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"404": "Post not found"}
 
 # For creating a post
 

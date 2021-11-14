@@ -16,7 +16,7 @@ def create_user(users_data: schemas.CreateUserSchema,
     users_data = users_data.dict()
     users_data.update({
         "password": utils.get_password_hash(users_data["password"]),
-        "created_at": str(datetime.utcnow())
+        # "created_at": str(datetime.utcnow())
     })
     new_user = models.Users(**users_data)
     db.add(new_user)

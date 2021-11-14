@@ -27,7 +27,7 @@ class Users(Base):
     username = Column(String(20), nullable=False, unique=True)
     email = Column(String(40), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False)
+    # created_at = Column(TIMESTAMP(timezone=True), nullable=False)
     last_modified = Column(TIMESTAMP(
         timezone=True), nullable=False, server_default=text("CURRENT_TIMESTAMP"))
 

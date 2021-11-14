@@ -17,7 +17,7 @@ class UserOut(BaseModel):
     user_id: int
     email: EmailStr
     username: str
-    created_at: datetime
+    # created_at: datetime
     last_modified: datetime
 
     class Config:
