@@ -18,10 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(authentication.router)
+app.include_router(user.router)
 app.include_router(post.router)
 app.include_router(vote.router)
-app.include_router(user.router)
-app.include_router(authentication.router)
 
 # Root dir
 

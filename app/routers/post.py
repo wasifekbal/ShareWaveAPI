@@ -16,6 +16,7 @@ def get_posts(db: Session = Depends(get_db),
               search: Optional[str] = "",
               limit: int = 10,
               offset: int = 0,
+              current_user: int = Depends(oauth2.get_current_user)
               ):
     if not limit:
         limit = None
@@ -35,6 +36,7 @@ def get_posts(db: Session = Depends(get_db),
 def get_post(id: int,
              db: Session = Depends(get_db),
              response: Response = None,
+             current_user: int = Depends(oauth2.get_current_user)
              ):
 
     post = db.query(models.Posts, func.count(models.Vote.post_id).label("votes")).join(models.Vote, models.Vote.post_id == models.Posts.post_id, isouter=True).group_by(models.Posts.post_id).filter(models.Posts.post_id == id).first()
