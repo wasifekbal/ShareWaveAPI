@@ -1,10 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime
-
 from pydantic.networks import EmailStr
-
-from app import database
 
 
 class CreateUserSchema(BaseModel):
@@ -12,6 +9,18 @@ class CreateUserSchema(BaseModel):
     username: str
     password: str
 
+class UserLoginSchema(BaseModel):
+    email: EmailStr
+    password: str
+
+class ForgotPasswordSchema(BaseModel):
+    email: EmailStr
+    new_password: str
+
+class UpdateUserSchema(BaseModel):
+    old_email: EmailStr
+    new_email: EmailStr
+    username: str
 
 class UserOut(BaseModel):
     user_id: int
@@ -24,9 +33,6 @@ class UserOut(BaseModel):
         orm_mode = True
 
 
-class UserLoginSchema(BaseModel):
-    email: EmailStr
-    password: str
 
 
 class PostSchema(BaseModel):
@@ -58,6 +64,7 @@ class ResponsePostSchema(BaseModel):
         class User_info(BaseModel):
             user_id: int
             email: EmailStr
+            username: str
 
             class Config:
                 orm_mode = True
