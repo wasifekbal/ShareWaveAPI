@@ -1,3 +1,3 @@
 # fastapi_social
 
-https://fastapi-social.herokuapp.com/docs
+https://fastapi-social.herokuapp.com/redoc
